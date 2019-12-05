@@ -1,9 +1,11 @@
 import Cryptodome.Cipher.AES as AES
 import Cryptodome.Cipher.DES as DES
 import Cryptodome.Cipher.DES3 as DES3
-import Cryptodome.Cipher.CAST as CAST
-import Cryptodome.Util.strxor as XOR
+import Cryptodome.Cipher.Blowfish as Blowfish
 import Cryptodome.Random as Random
+
+import Crypto.Cipher.XOR as XOR
+
 import itertools
 
 #data = b'This is the first message that I have encrypted using PyCryptodome!!'
@@ -12,11 +14,6 @@ data = Random.get_random_bytes(4194304)
 
 def to_hex(byte_string):
     return ":".join("{:02x}".format(c) for c in byte_string)
-
-
-def chunker(iterable, n, fillvalue=None):
-    args = [iter(iterable)] * n
-    return ((bytes(bytearray(x))) for x in itertools.zip_longest(fillvalue=fillvalue, *args))
 
 
 def run_AES256():
@@ -159,38 +156,38 @@ def run_3DES():
     return
 
 
-def run_CAST128():
+def run_Blowfish():
     key = Random.get_random_bytes(16)
     nonce = Random.get_random_bytes(16)
 
     print("=================")
-    print("Encrypting with CAST-128")
+    print("Encrypting with Blowfish")
     print("Key: ", to_hex(key))
     print("Nonce: ", to_hex(nonce))
 
-    cipher = CAST.new(key, CAST.MODE_EAX, nonce)
+    cipher = Blowfish.new(key, Blowfish.MODE_EAX, nonce)
 
     ciphertext = cipher.encrypt(data)
 
     #print("Cleartext: ", to_hex(data))
     #print("Ciphertext: ", to_hex(ciphertext))
 
-    file_out = open("cast.bin", "wb")
+    file_out = open("blowfish.bin", "wb")
     [file_out.write(x) for x in (cipher.nonce, ciphertext)]
     file_out.close()
 
-    file_in = open("cast.bin", "rb")
+    file_in = open("blowfish.bin", "rb")
     decrypt_nonce, decrypt_ciphertext = [
         file_in.read(x) for x in (16, -1)]
     file_in.close()
 
     print("=================")
-    print("Decrypting with CAST-128")
+    print("Decrypting with Blowfish")
     print("Key: ", to_hex(key))
     print("Nonce: ", to_hex(decrypt_nonce))
     #print("Ciphertext: ", to_hex(decrypt_ciphertext))
 
-    decipher = CAST.new(key, CAST.MODE_EAX, decrypt_nonce)
+    decipher = Blowfish.new(key, Blowfish.MODE_EAX, decrypt_nonce)
     cleartext = decipher.decrypt(decrypt_ciphertext)
 
     #print("Cleartext: ", to_hex(cleartext))
@@ -206,25 +203,23 @@ def run_CAST128():
 
 def run_XOR():
     key = Random.get_random_bytes(16)
-    textlen = len(data)
 
     print("=================")
     print("Encrypting with XOR")
     print("Key: ", to_hex(key))
 
-    ciphertext = b"".join(XOR.strxor(bytes(bytearray(c)), bytes(bytearray(k)))
-                          for (c, k) in zip(chunker(data, len(key), fillvalue=ord(b'0')), itertools.cycle(chunker(key, len(key)))))
+    cipher = XOR.new(key)
 
-    #print("Text length: ", textlen)
+    ciphertext = cipher.encrypt(data)
+
     #print("Cleartext: ", to_hex(data))
     #print("Ciphertext: ", to_hex(ciphertext))
 
     file_out = open("xor.bin", "wb")
-    [file_out.write(x) for x in (textlen.to_bytes(16, 'big'), ciphertext)]
+    file_out.write(ciphertext)
     file_out.close()
 
     file_in = open("xor.bin", "rb")
-    decrypt_len = int.from_bytes(file_in.read(16), 'big')
     decrypt_ciphertext = file_in.read()
     file_in.close()
 
@@ -233,10 +228,9 @@ def run_XOR():
     print("Key: ", to_hex(key))
     #print("Ciphertext: ", to_hex(decrypt_ciphertext))
 
-    cleartext = b"".join(XOR.strxor(bytes(bytearray(c)), bytes(bytearray(k)))
-                         for (c, k) in zip(chunker(decrypt_ciphertext, len(key), fillvalue=ord(b'0')), itertools.cycle(chunker(key, len(key)))))[:decrypt_len]
+    decipher = XOR.new(key)
+    cleartext = decipher.decrypt(decrypt_ciphertext)
 
-    #print("Text length: ", decrypt_len)
     #print("Cleartext: ", to_hex(cleartext[:decrypt_len]))
     print("=================")
 
@@ -252,7 +246,7 @@ def main():
     run_AES256()
     run_DES()
     run_3DES()
-    run_CAST128()
+    run_Blowfish()
     run_XOR()
 
 
