@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import Cryptodome.Cipher.AES as AES
 import Cryptodome.Cipher.DES as DES
 import Cryptodome.Cipher.DES3 as DES3
@@ -5,8 +7,6 @@ import Cryptodome.Cipher.Blowfish as Blowfish
 import Cryptodome.Random as Random
 
 import Crypto.Cipher.XOR as XOR
-
-import itertools
 
 #data = b'This is the first message that I have encrypted using PyCryptodome!!'
 data = Random.get_random_bytes(4194304)
