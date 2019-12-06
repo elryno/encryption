@@ -6,8 +6,14 @@ trap "kill 0" EXIT
 powerstat -R -c -z &
 PID=$!
 
-sleep 10
+/usr/bin/time -f "%e sec" -o ./time.log sleep 5
 
 kill -INT $PID
+
+sleep 1
+echo
+
+cat ./time.log
+rm ./time.log
 
 wait

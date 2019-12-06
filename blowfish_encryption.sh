@@ -6,8 +6,14 @@ trap "kill 0" EXIT
 powerstat -R -c -z &
 PID=$!
 
-./blowfish.py --num 8
+/usr/bin/time -f "%e sec" -o ./time.log ./blowfish.py --num 8
 
 kill -INT $PID
+
+sleep 1
+echo
+
+cat ./time.log
+rm ./time.log
 
 wait
